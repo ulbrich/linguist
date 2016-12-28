@@ -1,6 +1,9 @@
 # Linguist
 > Linguist is a simple Elixir Internationalization library
 
+Please see the original project for updates. This fork solely fixes Elixir
+1.3 warnings which fire when parsing localization files (as they are in the
+macro).
 
 ## Usage
 

@@ -27,16 +27,6 @@ defmodule Linguist.Compiler do
     end
   end
   """
-
-  @interpol_rgx  ~r/
-                   (?<head>)
-                   (?<!%) %{.+?}
-                   (?<tail>)
-                   /x
-
-  @escaped_interpol_rgx ~r/%%{/
-  @simple_interpol "%{"
-
   def compile(translations) do
     langs = Dict.keys translations
     translations =
@@ -78,23 +68,19 @@ defmodule Linguist.Compiler do
   end
 
   defp interpolate(string, var) do
-    @interpol_rgx 
-      |> Regex.split(string, on: [:head, :tail])
-      |> Enum.reduce( "", fn
+    ~r/(?<head>)%{[^}]+}(?<tail>)/
+    |> Regex.split(string, on: [:head, :tail])
+    |> Enum.reduce("", fn
       <<"%{" <> rest>>, acc ->
         key      = String.to_atom(String.rstrip(rest, ?}))
         bindings = Macro.var(var, __MODULE__)
         quote do
           unquote(acc) <> to_string(Dict.fetch!(unquote(bindings), unquote(key)))
         end
-      segment, acc -> quote do: (unquote(acc) <> unquote(unescape(segment)))
-    end )
+      segment, acc -> quote do: (unquote(acc) <> unquote(segment))
+    end)
   end
 
   defp append_path("", next), do: to_string(next)
   defp append_path(current, next), do: "#{current}.#{next}"
-
-  defp unescape(segment) do
-      Regex.replace @escaped_interpol_rgx, segment, @simple_interpol
-  end
 end
